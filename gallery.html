@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>百业照片墙 · 示例百业</title>
+
+<!-- Fancybox 5 样式（全屏画廊插件，来自 CDN，需联网） -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.36/dist/fancybox/fancybox.css">
+
+<style>
+/* ============================================================
+   古风深色主题：墨蓝底 / 暖白字 / 暗金点缀
+   ============================================================ */
+:root{
+    --bg:#0f1a24;
+    --bg-deep:#0a121a;
+    --panel:rgba(22,36,48,0.9);
+    --text:#e8e2d8;
+    --text-dim:#a8a29b;
+    --text-mute:#6f7a84;
+    --gold:#cfa670;
+    --gold-light:#e6c894;
+    --border:rgba(207,166,112,0.22);
+    --border-strong:rgba(207,166,112,0.55);
+    --ok:#7fb069;
+    --err:#d4705e;
+    --font-serif:"Songti SC","STSong","SimSun","Noto Serif SC",serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+    min-height:100vh;
+    padding:36px 20px 60px;
+    background:
+        radial-gradient(1200px 560px at 50% -10%, rgba(207,166,112,0.10), transparent 70%),
+        linear-gradient(160deg, var(--bg) 0%, var(--bg-deep) 100%);
+    color:var(--text);
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    font-size:14.5px;
+    line-height:1.7;
+}
+.wrap{max-width:1180px;margin:0 auto;}
+
+/* ---------- 头部 ---------- */
+.head{
+    text-align:center;
+    margin-bottom:34px;
+    position:relative;
+}
+.head h1{
+    font-family:var(--font-serif);
+    font-size:30px;
+    font-weight:700;
+    letter-spacing:8px;
+}
+.head .sub{
+    margin-top:8px;
+    font-size:11.5px;
+    letter-spacing:3px;
+    color:var(--gold);
+}
+.head .rule{
+    margin:16px auto 0;
+    width:130px;
+    height:1px;
+    background:linear-gradient(90deg,transparent,var(--border-strong),transparent);
+}
+
+/* 头部右侧按钮 */
+.head-actions{
+    position:absolute;
+    top:0;
+    right:0;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+.btn{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:9px 20px;
+    border:1px solid var(--border-strong);
+    border-radius:22px;
+    background:rgba(207,166,112,0.1);
+    color:var(--gold-light);
+    text-decoration:none;
+    font-family:inherit;
+    font-size:13.5px;
+    letter-spacing:2px;
+    cursor:pointer;
+    transition:all .25s;
+}
+.btn:hover{
+    background:rgba(207,166,112,0.22);
+    box-shadow:0 0 18px rgba(207,166,112,0.28);
+}
+
+/* ---------- 照片网格 ---------- */
+.photo-grid{
+    display:grid;
+    /* 卡片最小宽度：想让照片更小/更大，改这里的 170px（越小一排越多） */
+    grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));
+    gap:12px;
+}
+.photo-item{
+    position:relative;
+    display:block;
+    overflow:hidden;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:rgba(10,18,26,0.6);
+    text-decoration:none;
+    transition:transform .3s, box-shadow .3s, border-color .3s;
+}
+.photo-item:hover{
+    transform:translateY(-4px);
+    border-color:rgba(207,166,112,0.5);
+    box-shadow:0 12px 26px rgba(0,0,0,0.45);
+}
+/* 固定 4:3 比例，保证网格整齐（图片用 cover 裁剪填满） */
+.photo-thumb{
+    width:100%;
+    aspect-ratio:4/3;
+    object-fit:cover;
+    display:block;
+    background:rgba(10,18,26,0.8);
+}
+.photo-meta{
+    padding:10px 13px 12px;
+}
+.photo-title{
+    font-size:14px;
+    letter-spacing:1px;
+    color:var(--text);
+    /* 标题过长时省略号，不撑破卡片 */
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.photo-by{
+    margin-top:3px;
+    font-size:11.5px;
+    letter-spacing:1px;
+    color:var(--text-mute);
+}
+
+/* 空状态 / 加载中 / 出错 */
+.tip{
+    padding:60px 20px;
+    text-align:center;
+    color:var(--text-mute);
+    font-size:14px;
+    letter-spacing:1px;
+}
+.tip.err{color:var(--err);}
+
+/* ---------- 模态框 ---------- */
+.modal{
+    position:fixed;
+    inset:0;
+    z-index:999;
+    display:none;                 /* 默认隐藏，加 .show 才显示 */
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+.modal.show{display:flex;}
+.mo-mask{
+    position:absolute;
+    inset:0;
+    background:rgba(6,10,14,0.78);
+    -webkit-backdrop-filter:blur(4px);
+    backdrop-filter:blur(4px);
+}
+.mo-panel{
+    position:relative;
+    width:100%;
+    max-width:480px;
+    max-height:90vh;
+    overflow-y:auto;
+    padding:30px 28px 26px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:linear-gradient(165deg, rgba(30,48,62,0.97), rgba(14,22,30,0.98));
+    box-shadow:0 24px 60px rgba(0,0,0,0.6);
+}
+.mo-title{
+    margin-bottom:20px;
+    text-align:center;
+    font-family:var(--font-serif);
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:4px;
+    color:var(--text);
+}
+.mo-close{
+    position:absolute;
+    top:12px;
+    right:14px;
+    width:30px;
+    height:30px;
+    border:none;
+    background:transparent;
+    color:var(--text-mute);
+    font-size:20px;
+    cursor:pointer;
+}
+.mo-close:hover{color:var(--gold-light);}
+
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.field label{font-size:12.5px;letter-spacing:1.5px;color:var(--text-dim);}
+.field label .req{color:var(--gold);margin-left:3px;}
+.field input[type=text],
+.field input[type=password]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:rgba(10,18,26,0.75);
+    color:var(--text);
+    font-family:inherit;
+    font-size:14px;
+    outline:none;
+    transition:border-color .25s, box-shadow .25s;
+}
+.field input:focus{
+    border-color:var(--border-strong);
+    box-shadow:0 0 0 3px rgba(207,166,112,0.12);
+}
+.field input::placeholder{color:var(--text-mute);}
+
+/* 文件选择：隐藏原生 file，用自定义按钮包一层 */
+.file-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 16px;
+    border:1px dashed var(--border-strong);
+    border-radius:8px;
+    background:rgba(207,166,112,0.08);
+    color:var(--gold-light);
+    font-size:13px;
+    letter-spacing:1px;
+    cursor:pointer;
+}
+.file-btn:hover{background:rgba(207,166,112,0.18);}
+.file-btn input{display:none;}
+.file-info{
+    margin-top:8px;
+    font-size:12px;
+    color:var(--text-mute);
+    line-height:1.6;
+    word-break:break-all;
+}
+
+/* 预览图 */
+.preview{
+    margin-top:10px;
+    display:none;
+}
+.preview.show{display:block;}
+.preview img{
+    width:100%;
+    max-height:220px;
+    object-fit:contain;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:rgba(10,18,26,0.7);
+}
+
+.mo-result{
+    margin-top:14px;
+    min-height:22px;
+    font-size:13.5px;
+    text-align:center;
+    letter-spacing:1px;
+}
+.mo-result.show{padding:10px 12px;border-radius:8px;}
+.mo-result.ok{color:var(--ok);border:1px solid rgba(127,176,105,0.45);background:rgba(127,176,105,0.1);}
+.mo-result.err{color:var(--err);border:1px solid rgba(212,112,94,0.45);background:rgba(212,112,94,0.1);}
+
+.mo-submit{
+    width:100%;
+    margin-top:14px;
+    padding:13px;
+    border:1px solid var(--border-strong);
+    border-radius:24px;
+    background:linear-gradient(120deg,rgba(207,166,112,0.24),rgba(179,118,63,0.2));
+    color:var(--gold-light);
+    font-family:var(--font-serif);
+    font-size:16px;
+    font-weight:700;
+    letter-spacing:6px;
+    cursor:pointer;
+    transition:all .28s;
+}
+.mo-submit:hover:not(:disabled){
+    background:linear-gradient(120deg,rgba(207,166,112,0.36),rgba(179,118,63,0.28));
+    box-shadow:0 0 24px rgba(207,166,112,0.3);
+}
+.mo-submit:disabled{opacity:.6;cursor:not-allowed;letter-spacing:3px;}
+
+/* 提示：Fancybox CDN 没加载时的兜底说明 */
+.cdn-warn{
+    margin-bottom:18px;
+    padding:9px 14px;
+    border:1px solid rgba(212,112,94,0.4);
+    border-radius:8px;
+    background:rgba(212,112,94,0.1);
+    color:var(--err);
+    font-size:12.5px;
+    text-align:center;
+    display:none;
+}
+.cdn-warn.show{display:block;}
+
+@media (max-width:640px){
+    .head h1{font-size:24px;letter-spacing:5px;}
+    .head-actions{position:static;margin-top:18px;}
+    .photo-grid{grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:12px;}
+    .mo-panel{padding:24px 18px 20px;}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+    <div class="head">
+        <div class="head-actions">
+            <button type="button" class="btn" id="btnOpenUpload">我要投稿（需后端）</button>
+            <a class="btn" href="index.html">← 返回主页</a>
+        </div>
+        <h1>百业照片墙</h1>
+        <div class="sub">P H O T O&nbsp;&nbsp;W A L L</div>
+        <div class="rule"></div>
+    </div>
+
+    <!-- Fancybox CDN 没加载成功时显示的提示 -->
+    <div class="cdn-warn" id="cdnWarn"></div>
+
+    <!-- 照片网格：内容由 JS 动态生成 -->
+    <div class="photo-grid" id="photoGrid"></div>
+    <div class="tip" id="tip">正在加载照片…</div>
+</div>
+
+<!-- ============ 投稿模态框 ============ -->
+<div class="modal" id="uploadModal" aria-hidden="true">
+    <div class="mo-mask" id="moMask"></div>
+    <div class="mo-panel" role="dialog" aria-modal="true">
+        <button type="button" class="mo-close" id="moClose" aria-label="关闭">×</button>
+        <div class="mo-title">投 递 影 卷</div>
+
+        <form id="uploadForm" autocomplete="off">
+            <div class="field">
+                <label for="secret">暗号<span class="req">*</span></label>
+                <input type="password" id="secret" placeholder="庄主给的投稿暗号">
+            </div>
+
+            <div class="field">
+                <label for="title">照片标题</label>
+                <input type="text" id="title" placeholder="如：百业战全员合影" maxlength="100">
+            </div>
+
+            <div class="field">
+                <label for="uploader">你的昵称<span class="req">*</span></label>
+                <input type="text" id="uploader" placeholder="如：示例甲" maxlength="50">
+            </div>
+
+            <div class="field">
+                <label>选择照片<span class="req">*</span></label>
+                <label class="file-btn">
+                    选择图片
+                    <!-- accept 只让图片类文件可选，方便用户挑文件 -->
+                    <input type="file" id="photo" accept="image/jpeg,image/png,image/gif,image/webp">
+                </label>
+                <div class="file-info" id="fileInfo">选好后会自动压缩（最大宽 1920px，JPEG 质量 0.8）</div>
+            </div>
+
+            <div class="preview" id="preview">
+                <img id="previewImg" alt="压缩后的预览">
+            </div>
+
+            <button type="submit" class="mo-submit" id="moSubmit">投 递</button>
+            <div class="mo-result" id="moResult"></div>
+        </form>
+    </div>
+</div>
+
+<!-- Fancybox 5 脚本（必须在下面主逻辑之前加载） -->
+<script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.36/dist/fancybox/fancybox.umd.js"></script>
+
+<script>
+/* ============================================================
+   百业照片墙 主逻辑
+   顺序：拉取照片 -> 渲染 -> 绑定 Fancybox -> 投稿（压缩+上传）
+   ============================================================ */
+(function () {
+    'use strict';
+
+    /* 两个接口都在本页同目录下 */
+    var API_GET    = 'api_get_photos.php';
+    var API_UPLOAD = 'api_upload_photo.php';
+
+    /* 图片压缩参数 */
+    var MAX_WIDTH = 1920;   // 等比缩放后的最大宽度
+    var QUALITY   = 0.8;    // JPEG 质量（0~1，0.8 肉眼几乎无损）
+
+    var grid    = document.getElementById('photoGrid');
+    var tip     = document.getElementById('tip');
+    var cdnWarn = document.getElementById('cdnWarn');
+
+    /* ---------- 工具：把字节数显示成 KB / MB ---------- */
+    function fmtSize(bytes) {
+        if (bytes >= 1024 * 1024) return (bytes / 1024 / 1024).toFixed(2) + 'MB';
+        return Math.max(1, Math.round(bytes / 1024)) + 'KB';
+    }
+
+    /* ---------- 工具：HTML 转义，防止标题里的 < > 破坏结构 ---------- */
+    function esc(s) {
+        return String(s === null || s === undefined ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+
+    /* ============================================================
+       一、加载照片（两条来源）
+       ------------------------------------------------------------
+       A. 本地清单 data/photos.js
+          把图片丢进 assets/img/photos/ 后，本地运行
+          「node tools/scan-photos.js」生成。不需要 PHP，打开就有。
+       B. 服务器接口 api_get_photos.php
+          访客通过右上角「我要投稿」传上来的照片（需要 PHP 环境）。
+
+       流程：先渲染本地清单（秒开）-> 再请求接口合并投稿；
+             接口没部署也不影响，本地照片照常显示。
+       ============================================================ */
+    var localPhotos = [];      /* 本地清单里的照片 */
+
+    /* 动态插入 <script> 加载 data/photos.js；文件不存在也不报错 */
+    function loadLocalPhotos(cb) {
+        var s = document.createElement('script');
+        s.src = 'data/photos.js';
+        s.onload  = function () { cb(window.QN_PHOTOS || []); };
+        s.onerror = function () { cb([]); };       /* 还没生成清单，忽略 */
+        document.head.appendChild(s);
+    }
+
+    /* 按图片路径去重：同一张图只显示一次 */
+    function dedupe(list) {
+        var seen = {}, out = [];
+        (list || []).forEach(function (p) {
+            if (!p || !p.image_url) return;
+            if (seen[p.image_url]) return;
+            seen[p.image_url] = 1;
+            out.push(p);
+        });
+        return out;
+    }
+
+    /* 按时间倒序排列：新的排前面，没有时间的排最后 */
+    function sortByTime(list) {
+        return list.slice().sort(function (a, b) {
+            var ta = a.created_at || '', tb = b.created_at || '';
+            if (ta === tb) return 0;
+            if (!ta) return 1;
+            if (!tb) return -1;
+            return ta < tb ? 1 : -1;
+        });
+    }
+
+    function loadPhotos() {
+        tip.className = 'tip';
+        tip.textContent = '正在加载照片…';
+        tip.style.display = 'block';
+
+        /* 第一步：先读本地清单，有就立刻上墙 */
+        loadLocalPhotos(function (locals) {
+            localPhotos = locals || [];
+            if (localPhotos.length) renderPhotos(sortByTime(localPhotos));
+
+            /* 第二步：再拉接口，把投稿的照片合并进来 */
+            fetchApiPhotos();
+        });
+    }
+
+    function fetchApiPhotos() {
+        fetch(API_GET, { method: 'GET' })
+            .then(function (res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.text();
+            })
+            .then(function (text) {
+                /* 后端万一夹了 PHP 警告输出，从文本里抠出 JSON 部分 */
+                var json = null;
+                try {
+                    json = JSON.parse(text);
+                } catch (e) {
+                    var s = text.indexOf('{'), e2 = text.lastIndexOf('}');
+                    if (s >= 0 && e2 > s) json = JSON.parse(text.slice(s, e2 + 1));
+                }
+                if (!json) throw new Error('接口返回内容不是 JSON');
+                if (json.code !== 200) throw new Error(json.msg || '读取失败');
+                if (!Array.isArray(json.data)) throw new Error('数据格式不对');
+
+                /* 投稿的照片 + 本地清单，去重后按时间倒序一起显示 */
+                var all = dedupe((json.data || []).concat(localPhotos));
+                if (all.length) renderPhotos(sortByTime(all));
+            })
+            .catch(function () {
+                /* 接口不可用（没部署 PHP、或本机双击打开）：
+                   本地清单已经有照片就保持原样，不要把画面清空 */
+                if (localPhotos.length) return;
+
+                grid.innerHTML = '';
+                tip.className = 'tip err';
+                tip.textContent = '还没有照片：把图片放进 assets/img/photos/ 后运行 '
+                    + 'tools/scan-photos.js，或点击右上角「我要投稿」上传';
+                tip.style.display = 'block';
+            });
+    }
+
+    function renderPhotos(list) {
+        if (!list.length) {
+            grid.innerHTML = '';
+            tip.className = 'tip';
+            tip.textContent = '还没有照片：把图片放进 assets/img/photos/ 后运行 '
+                + 'tools/scan-photos.js，或点击右上角「我要投稿」上传';
+            tip.style.display = 'block';
+            return;
+        }
+
+        tip.style.display = 'none';
+
+        /* 拼接 HTML
+           - <a> 的 href 指向大图，Fancybox 点它就会全屏打开
+           - data-caption 是全屏时左下角显示的说明文字
+           - <img> 必须加 loading="lazy"：只有滚到可见位置才加载，照片多也不卡 */
+        var html = list.map(function (p) {
+            var caption = esc((p.title || '未命名') + (p.uploader ? ' · ' + p.uploader : ''));
+            return '<a class="photo-item" href="' + esc(p.image_url) + '"' +
+                   ' data-fancybox="gallery" data-caption="' + caption + '">' +
+                   '<img class="photo-thumb" src="' + esc(p.image_url) + '"' +
+                   ' alt="' + caption + '" loading="lazy" decoding="async">' +
+                   '<div class="photo-meta">' +
+                   '<div class="photo-title">' + esc(p.title || '未命名') + '</div>' +
+                   '<div class="photo-by">投稿：' + esc(p.uploader || '匿名') +
+                   (p.created_at ? ' · ' + esc(String(p.created_at).slice(0, 10)) : '') +
+                   '</div></div></a>';
+        }).join('');
+
+        grid.innerHTML = html;
+
+        /* 渲染完再绑定 Fancybox（新插入的元素也要能被点开） */
+        bindFancybox();
+    }
+
+    /* ---------- 绑定全屏画廊 ---------- */
+    function bindFancybox() {
+        if (typeof Fancybox === 'undefined') {
+            /* CDN 没加载（比如断网）：提示一下，并让点击直接在新标签打开图片 */
+            cdnWarn.className = 'cdn-warn show';
+            cdnWarn.textContent = '全屏画廊插件未加载（可能未联网），点击照片将直接用新标签页打开。';
+            var links = grid.querySelectorAll('.photo-item');
+            for (var i = 0; i < links.length; i++) {
+                links[i].setAttribute('target', '_blank');
+                links[i].setAttribute('rel', 'noopener');
+            }
+            return;
+        }
+        cdnWarn.className = 'cdn-warn';
+        /* Fancybox 5：把带 data-fancybox 的链接变成全屏画廊。
+           默认就支持「左右箭头切换、ESC 退出、点击遮罩关闭」 */
+        Fancybox.bind('[data-fancybox]', {});
+    }
+
+
+    /* ============================================================
+       二、图片压缩（HTML5 Canvas，在浏览器里完成，不占服务器资源）
+       ------------------------------------------------------------
+       流程：File -> FileReader 读成 DataURL -> Image 加载
+             -> 等比缩放到最大宽度 1920 -> Canvas 画上去
+             -> toBlob 输出 JPEG（质量 0.8）-> 包装成 File 对象
+       ============================================================ */
+    function compressImage(file, maxWidth, quality) {
+        return new Promise(function (resolve, reject) {
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                var img = new Image();
+
+                img.onload = function () {
+                    var w = img.naturalWidth;
+                    var h = img.naturalHeight;
+
+                    /* 等比缩放：宽超过上限才缩，小图保持原尺寸不放大 */
+                    if (w > maxWidth) {
+                        h = Math.round(h * maxWidth / w);
+                        w = maxWidth;
+                    }
+
+                    var canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+
+                    var ctx = canvas.getContext('2d');
+                    /* 透明 PNG 转 JPEG 会变黑，先铺一层深色底更协调 */
+                    ctx.fillStyle = '#0f1a24';
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    /* toBlob 是异步的，比 toDataURL 省内存，直接得到二进制 */
+                    canvas.toBlob(function (blob) {
+                        if (!blob) { reject(new Error('图片压缩失败')); return; }
+
+                        /* 包装成 File 对象，这样才能放进 FormData 上传 */
+                        var out = new File([blob], 'photo.jpg', { type: 'image/jpeg', lastModified: Date.now() });
+                        resolve({ file: out, width: w, height: h });
+                    }, 'image/jpeg', quality);
+                };
+
+                img.onerror = function () { reject(new Error('图片读取失败，文件可能已损坏')); };
+                img.src = e.target.result;
+            };
+
+            reader.onerror = function () { reject(new Error('文件读取失败')); };
+            reader.readAsDataURL(file);
+        });
+    }
+
+
+    /* ============================================================
+       三、模态框：打开 / 关闭
+       ============================================================ */
+    var modal = document.getElementById('uploadModal');
+
+    function openModal() {
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+    function closeModal() {
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+    }
+
+    document.getElementById('btnOpenUpload').addEventListener('click', openModal);
+    document.getElementById('moClose').addEventListener('click', closeModal);
+    document.getElementById('moMask').addEventListener('click', closeModal);
+
+    /* 按 ESC 关闭（Fancybox 打开时它自己会处理 ESC，这里只管模态框） */
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
+    });
+
+
+    /* ============================================================
+       四、选择图片：压缩 + 预览
+       ============================================================ */
+    var fileInput   = document.getElementById('photo');
+    var fileInfo    = document.getElementById('fileInfo');
+    var preview     = document.getElementById('preview');
+    var previewImg  = document.getElementById('previewImg');
+    var moResult    = document.getElementById('moResult');
+    var moSubmit    = document.getElementById('moSubmit');
+    var form        = document.getElementById('uploadForm');
+
+    var pendingFile = null;   /* 压缩后待上传的图片 */
+
+    fileInput.addEventListener('change', function () {
+        var f = fileInput.files && fileInput.files[0];
+        if (!f) return;
+
+        /* 先用后缀粗筛一下，具体校验交给后端 */
+        if (!/^image\//.test(f.type)) {
+            showResult('请选择图片文件（jpg / png / gif / webp）', false);
+            fileInput.value = '';
+            return;
+        }
+
+        var before = f.size;
+        fileInfo.textContent = '正在压缩…';
+        preview.classList.remove('show');
+
+        compressImage(f, MAX_WIDTH, QUALITY)
+            .then(function (res) {
+                pendingFile = res.file;
+
+                /* 如果压缩后反而更大（比如小图），就用原图，避免白折腾 */
+                if (res.file.size >= before) pendingFile = f;
+
+                fileInfo.textContent =
+                    '原始 ' + fmtSize(before) + ' → 压缩后 ' + fmtSize(pendingFile.size) +
+                    '（' + res.width + '×' + res.height + '）';
+
+                /* 用 ObjectURL 预览压缩后的图，用完记得回收 */
+                previewImg.src = URL.createObjectURL(pendingFile);
+                previewImg.onload = function () { URL.revokeObjectURL(previewImg.src); };
+                preview.classList.add('show');
+                showResult('', null);
+            })
+            .catch(function (err) {
+                pendingFile = null;
+                fileInfo.textContent = '选好后会自动压缩（最大宽 1920px，JPEG 质量 0.8）';
+                showResult(err.message, false);
+            });
+    });
+
+    function showResult(msg, ok) {
+        if (ok === null) { moResult.className = 'mo-result'; moResult.textContent = ''; return; }
+        moResult.className = 'mo-result show ' + (ok ? 'ok' : 'err');
+        moResult.textContent = msg;
+    }
+
+
+    /* ============================================================
+       五、提交投稿：FormData -> fetch POST -> 刷新照片墙
+       ============================================================ */
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();   /* 阻止表单默认刷新 */
+
+        var secret   = document.getElementById('secret').value.trim();
+        var title    = document.getElementById('title').value.trim();
+        var uploader = document.getElementById('uploader').value.trim();
+
+        /* 前端先校验，省掉无效请求 */
+        if (!secret)   { showResult('请填写暗号', false); return; }
+        if (!uploader) { showResult('请填写你的昵称', false); return; }
+        if (!pendingFile) { showResult('请先选择一张照片', false); return; }
+
+        /* FormData：字段名必须和后端 $_POST / $_FILES 对应 */
+        var fd = new FormData();
+        fd.append('secret', secret);
+        fd.append('title', title);
+        fd.append('uploader', uploader);
+        fd.append('photo', pendingFile, 'photo.jpg');   /* 第三个参数指定上传时的文件名 */
+
+        moSubmit.disabled = true;
+        moSubmit.textContent = '投递中...';
+        showResult('', null);
+
+        fetch(API_UPLOAD, { method: 'POST', body: fd })   /* FormData 会自动带正确的 Content-Type */
+            .then(function (res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.text();
+            })
+            .then(function (text) {
+                var json = null;
+                try {
+                    json = JSON.parse(text);
+                } catch (err2) {
+                    var s = text.indexOf('{'), e2 = text.lastIndexOf('}');
+                    if (s >= 0 && e2 > s) json = JSON.parse(text.slice(s, e2 + 1));
+                }
+                if (!json) throw new Error('接口返回内容不是 JSON');
+
+                if (json.code === 200) {
+                    showResult('投递成功，照片已上墙', true);
+
+                    /* 清空表单与待上传文件 */
+                    form.reset();
+                    pendingFile = null;
+                    fileInfo.textContent = '选好后会自动压缩（最大宽 1920px，JPEG 质量 0.8）';
+                    preview.classList.remove('show');
+
+                    /* 成功后：先重新拉取照片（新照片会自动排在最前），再关掉弹窗 */
+                    loadPhotos();
+                    setTimeout(closeModal, 700);
+                } else {
+                    /* 后端返回的具体原因，比如「暗号错误」「图片不能超过 5MB」 */
+                    showResult(json.msg || '投递失败', false);
+                }
+            })
+            .catch(function (err) {
+                var msg = err.message || String(err);
+                if (location.protocol === 'file:') {
+                    msg = '本机无法运行 PHP，请把本页与两个接口一起上传到服务器后再投稿';
+                } else if (msg.indexOf('Failed to fetch') >= 0) {
+                    msg = '请求失败：请确认 api_upload_photo.php 与本页在同一目录，且服务器支持 PHP';
+                }
+                showResult(msg, false);
+            })
+            .then(function () {
+                moSubmit.disabled = false;
+                moSubmit.textContent = '投 递';
+            });
+    });
+
+
+    /* ---------- 打开页面就加载照片 ---------- */
+    loadPhotos();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>转盘 · 示例百业</title>
+<style>
+:root{--bg:#1a1a1a;--bg-panel:#212121;--text:#e8e2d8;--text-dim:#a8a29b;--text-mute:#6f6a64;--gold:#cfa670;--gold-light:#e6c894;--border:rgba(207,166,112,0.22);--border-strong:rgba(207,166,112,0.55);--font-serif:"Songti SC","STSong","SimSun","Noto Serif SC",serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;}
+.container{width:100%;max-width:1180px;margin:0 auto;padding:0 24px;}
+.section{padding:48px 0;position:relative;}
+.section-head{text-align:center;margin-bottom:26px;}
+.section-title{font-family:var(--font-serif);font-size:30px;letter-spacing:4px;color:var(--text);}
+
+/* ============================================================
+   示例百业 · PVP 转盘
+   深色底 + 炉火金环，Canvas 绘制扇形
+   ============================================================ */
+
+.wheel {
+    position: relative;
+    overflow: hidden;
+}
+
+.wheel::before {
+    content: "";
+    position: absolute;
+    width: 520px;
+    height: 520px;
+    left: 50%;
+    top: 40%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    filter: blur(100px);
+    background: radial-gradient(circle, rgba(207, 166, 112, 0.16), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.wheel .container {
+    position: relative;
+    z-index: 1;
+}
+
+.wheel-lead {
+    max-width: 660px;
+    margin: 0 auto 26px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 14.5px;
+    line-height: 2;
+    letter-spacing: 0.5px;
+}
+
+/* ---------- 转盘主体 ---------- */
+.wheel-stage {
+    position: relative;
+    width: min(460px, 88vw);
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+}
+
+/* 12 点方向固定指针 */
+.wheel-pointer {
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 4;
+    width: 0;
+    height: 0;
+    border-left: 13px solid transparent;
+    border-right: 13px solid transparent;
+    border-top: 26px solid var(--gold-light);
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6));
+    pointer-events: none;
+}
+
+.wheel-pointer::after {
+    content: "";
+    position: absolute;
+    left: -7px;
+    top: -26px;
+    width: 0;
+    height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 14px solid #fff6e6;
+}
+
+.wheel-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.55), 0 0 40px rgba(179, 118, 63, 0.16);
+}
+
+/* 中心 GO 按钮 */
+.wheel-go {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    width: 21%;
+    height: 21%;
+    min-width: 74px;
+    min-height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(207, 166, 112, 0.75);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #e6c894, #b3763f 70%, #8c6b3f);
+    color: #241a10;
+    font-family: var(--font-serif);
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), inset 0 0 14px rgba(255, 255, 255, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.25s ease, filter 0.25s ease;
+}
+
+.wheel-go:hover:not(:disabled) {
+    transform: translate(-50%, -50%) scale(1.06);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55), 0 0 22px rgba(207, 166, 112, 0.5);
+}
+
+.wheel-go:active:not(:disabled) {
+    transform: translate(-50%, -50%) scale(0.97);
+}
+
+.wheel-go:disabled {
+    cursor: not-allowed;
+    filter: saturate(0.55) brightness(0.8);
+}
+
+.wheel-tip {
+    margin-top: 22px;
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 12.5px;
+    letter-spacing: 1.5px;
+}
+
+/* ---------- 主页入口卡片 ---------- */
+.wheel-entry {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 40px 24px 34px;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: linear-gradient(165deg, rgba(45, 42, 38, 0.7), rgba(22, 21, 20, 0.86));
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.wheel-entry:hover {
+    transform: translateY(-6px);
+    border-color: rgba(207, 166, 112, 0.5);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5), 0 0 30px rgba(207, 166, 112, 0.22);
+}
+
+.we-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    border: 1px solid rgba(207, 166, 112, 0.5);
+    background: radial-gradient(circle at 35% 30%, rgba(230, 200, 148, 0.2), rgba(179, 118, 63, 0.12));
+    color: var(--gold-light);
+}
+
+.wheel-entry:hover .we-icon {
+    box-shadow: 0 0 22px rgba(207, 166, 112, 0.35);
+}
+
+.we-title {
+    font-family: var(--font-serif);
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--text);
+}
+
+.we-sub {
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--text-mute);
+}
+
+.we-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+    padding: 8px 20px;
+    border: 1px solid var(--border-strong);
+    border-radius: 20px;
+    background: rgba(207, 166, 112, 0.12);
+    color: var(--gold-light);
+    font-size: 13px;
+    letter-spacing: 2px;
+}
+
+.we-go svg {
+    transition: transform 0.25s ease;
+}
+
+.wheel-entry:hover .we-go {
+    background: rgba(207, 166, 112, 0.22);
+}
+
+.wheel-entry:hover .we-go svg {
+    transform: translateX(4px);
+}
+
+/* ---------- 独立页底部返回 ---------- */
+.wheel-back-wrap {
+    margin-top: 46px;
+    text-align: center;
+}
+
+.wheel-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 26px;
+    border: 1px solid var(--border-strong);
+    border-radius: 22px;
+    background: rgba(207, 166, 112, 0.1);
+    color: var(--gold-light);
+    text-decoration: none;
+    font-size: 13.5px;
+    letter-spacing: 2px;
+    transition: all 0.25s ease;
+}
+
+.wheel-back:hover {
+    background: rgba(207, 166, 112, 0.2);
+    box-shadow: 0 0 18px rgba(207, 166, 112, 0.28);
+}
+
+/* ---------- 双转盘并排（PVP + PVE） ---------- */
+.wheel-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 34px;
+    align-items: start;
+}
+
+.wheel-pair .wheel-stage {
+    width: min(470px, 86vw);
+}
+
+.wheel-unit-title {
+    margin-bottom: 14px;
+    text-align: center;
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    color: var(--gold-light);
+}
+
+.wheel-unit-sub {
+    margin-bottom: 18px;
+    text-align: center;
+    font-size: 11.5px;
+    letter-spacing: 2px;
+    color: var(--text-mute);
+}
+
+/* ---------- 结果弹窗 ---------- */
+.wheel-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.wheel-modal.show {
+    visibility: visible;
+    opacity: 1;
+}
+
+.wm-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 8, 8, 0.74);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+.wm-panel {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    padding: 34px 30px 28px;
+    text-align: center;
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    background: linear-gradient(165deg, rgba(45, 42, 38, 0.97), rgba(22, 21, 20, 0.99));
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 34px rgba(179, 118, 63, 0.16);
+    transform: scale(0.9) translateY(14px);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.3s ease;
+}
+
+.wheel-modal.show .wm-panel {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.wm-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(207, 166, 112, 0.5);
+    background: rgba(207, 166, 112, 0.1);
+    color: var(--gold-light);
+}
+
+.wm-label {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--text-mute);
+}
+
+.wm-rule {
+    margin-top: 12px;
+    padding: 16px 14px;
+    border-left: 2px solid rgba(207, 166, 112, 0.55);
+    border-radius: 0 6px 6px 0;
+    background: rgba(207, 166, 112, 0.08);
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.6;
+    letter-spacing: 1px;
+    color: var(--gold-light);
+}
+
+.wm-btn {
+    margin-top: 22px;
+    padding: 10px 34px;
+    border: 1px solid var(--border-strong);
+    border-radius: 22px;
+    background: rgba(207, 166, 112, 0.12);
+    color: var(--gold-light);
+    font-family: inherit;
+    font-size: 14px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.wm-btn:hover {
+    background: rgba(207, 166, 112, 0.22);
+    box-shadow: 0 0 16px rgba(207, 166, 112, 0.3);
+}
+
+@media (max-width: 900px) {
+    .wheel-pair {
+        grid-template-columns: 1fr;
+        gap: 44px;
+    }
+
+    .wheel-pair .wheel-stage { width: min(400px, 88vw); }
+}
+
+@media (max-width: 640px) {
+    .wheel-stage { width: min(340px, 92vw); }
+    .wheel-go { font-size: 18px; min-width: 62px; min-height: 62px; }
+    .wm-rule { font-size: 17px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wm-panel { transition: none; }
+}
+
+</style>
+</head>
+<body>
+<section class="section wheel">
+    <div class="container">
+        <div class="section-head">
+            <h2 class="section-title">转盘</h2>
+        </div>
+        <div class="wheel-pair">
+
+            <div class="wheel-unit" data-wheel="pvp">
+                <h3 class="wheel-unit-title">PVP 转盘</h3>
+                <div class="wheel-stage">
+                    <div class="wheel-pointer"></div>
+                    <canvas class="wheel-canvas"></canvas>
+                    <button type="button" class="wheel-go">GO</button>
+                </div>
+
+                <div class="wheel-modal" aria-hidden="true">
+                    <div class="wm-mask"></div>
+                    <div class="wm-panel" role="dialog" aria-modal="true">
+                        <div class="wm-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2 4 6v6c0 5 3.4 9.2 8 10 4.6-.8 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <div class="wm-label">本 局 规 则</div>
+                        <div class="wm-rule">—</div>
+                        <button type="button" class="wm-btn">确 认</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wheel-unit" data-wheel="pve">
+                <h3 class="wheel-unit-title">PVE 转盘</h3>
+                <div class="wheel-stage">
+                    <div class="wheel-pointer"></div>
+                    <canvas class="wheel-canvas"></canvas>
+                    <button type="button" class="wheel-go">GO</button>
+                </div>
+
+                <div class="wheel-modal" aria-hidden="true">
+                    <div class="wm-mask"></div>
+                    <div class="wm-panel" role="dialog" aria-modal="true">
+                        <div class="wm-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2 4 6v6c0 5 3.4 9.2 8 10 4.6-.8 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <div class="wm-label">本 局 规 则</div>
+                        <div class="wm-rule">—</div>
+                        <button type="button" class="wm-btn">确 认</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="wheel-back-wrap">
+            <a class="wheel-back" href="index.html">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M11 6l-6 6 6 6"/>
+                </svg>
+                返回主页
+            </a>
+        </div>
+    </div>
+</section>
+<script>
+/* ============================================================
+   示例百业 · 规则转盘（原生 JS + Canvas，支持多实例）
+   ------------------------------------------------------------
+   - 页面上每个 .wheel-unit[data-wheel="pvp|pve"] 自动初始化成一个转盘
+   - 扇区数 = 数据数组长度，角度自动均分（PVP 21 项 / PVE 34 项）
+   - 字号按扇区弧长与半径自动试算，放不下自动折行
+   - 旋转：5 圈 + 随机角度，easeOutQuart 阻尼停止（约 4.5 秒）
+   ============================================================ */
+(function () {
+    'use strict';
+
+    /* PVP 规则 21 项 */
+    var PVP_DATA = [
+        "只能用普攻",
+        "只能使用闪避",
+        "禁止使用技能",
+        "使用Q E装载",
+        "改变视角习惯",
+        "奇术只用解控和药叉",
+        "不带药和鹰爪",
+        "奇术只用解控和点穴",
+        "10秒三招放一次",
+        "奇术只用解控和打狗棍",
+        "奇术只用解控和凌云塔",
+        "只能用追命",
+        "游龙击破",
+        "禁轻功",
+        "禁吃药",
+        "禁跳",
+        "只能使用一种武学",
+        "只能带一个武器技能",
+        "不能用移动键",
+        "禁止防御",
+        "只用技能进行攻击"
+    ];
+
+    /* PVE 规则 34 项 */
+    var PVE_DATA = [
+        "只准用特殊技打怪",
+        "全程不躲机制",
+        "禁止蓄力",
+        "全程扮演狗勾 / 妈妈",
+        "所有技能只放一级",
+        "只能平A攻击",
+        "正常开本",
+        "全程用夹子音",
+        "开怪前讲冷笑话",
+        "全程用方言交流",
+        "不能用任何技能",
+        "全程说反话",
+        "每波怪死一次",
+        "死一次喊爸爸",
+        "开怪前跳一支舞",
+        "全程说叠词词",
+        "使用特殊技的时候喊主人",
+        "每死一次学猫叫",
+        "死了要喊“我错了”",
+        "全程只能用左手操作",
+        "和前一位换账号",
+        "放奇术时唱歌",
+        "只能带三本心法",
+        "全程0buff打本",
+        "开本时使用黄金膝",
+        "静止跳跃",
+        "还有只能用重击和蓄力",
+        "只能用易武技",
+        "全程跟着队伍里前一位玩家",
+        "全程使用弓箭",
+        "全程使用跳劈",
+        "输出要边跳边打",
+        "治疗只奶自己",
+        "开怪前唱首歌"
+    ];
+
+    /* 扇区配色：饱和度适中，循环交替（8 与 21 / 34 均互质，首尾不同色） */
+    var PALETTES = {
+        pvp: ['#c0563f', '#c99a3c', '#6fa368', '#4a7fa5', '#8a6fa8', '#b3763f', '#5f8f8a', '#a8693a'],
+        pve: ['#4a7fa5', '#c99a3c', '#6fa368', '#8a6fa8', '#c0563f', '#5f8f8a', '#b3763f', '#a8693a']
+    };
+
+    var TAU = Math.PI * 2;
+
+    /* ---------- 计算：最终角度 -> 命中的扇区 ---------- */
+    function indexAtRotation(rot, n) {
+        var seg = TAU / n;
+        var a = (-Math.PI / 2 - rot) % TAU;          /* 指针在 12 点（盘内角度） */
+        a = ((a % TAU) + TAU) % TAU;
+        return Math.floor(a / seg) % n;
+    }
+
+    /* ---------- 计算：自动字号 + 折行 ---------- */
+    /* 文字沿半径方向书写（右对齐外圈），行沿切向堆叠 */
+    function layoutText(text, rIn, rOut, seg) {
+        var radial = (rOut - rIn) * 0.92;                 /* 可用径向长度 */
+        var refR = rIn + 0.5 * (rOut - rIn);              /* 参考半径（文字主要占据外段） */
+        var tangential = refR * seg * 0.85;               /* 可用切向宽度（留边距） */
+        var len = text.length;
+
+        for (var fs = 22; fs >= 9; fs--) {
+            for (var lines = 1; lines <= 3; lines++) {
+                var per = Math.ceil(len / lines);
+                if (per * fs * 1.02 > radial) continue;         /* 径向放不下 */
+                if (lines * fs * 1.18 > tangential) continue;   /* 切向放不下 */
+                var arr = [];
+                for (var i = 0; i < lines; i++) arr.push(text.substr(i * per, per));
+                return { fs: fs, lines: arr, lineH: fs * 1.18 };
+            }
+        }
+
+        /* 兜底：最小字号，尽量分 3 行 */
+        var fs0 = 9, per0 = Math.ceil(len / 3), out = [];
+        for (var k = 0; k < 3; k++) out.push(text.substr(k * per0, per0));
+        return { fs: fs0, lines: out, lineH: fs0 * 1.18 };
+    }
+
+    /* ---------- 单个转盘实例 ---------- */
+    function create(opts) {
+        var canvas = opts.canvas, ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+        if (!ctx) return null;
+
+        var btn = opts.btn, modal = opts.modal, ruleEl = opts.rule, confirmBtn = opts.confirm;
+        var data = opts.data, palette = opts.palette || PALETTES.pvp;
+        var N = data.length, SEG = TAU / N;
+        var rotation = 0, spinning = false, size = 0;
+
+        function resize() {
+            var dpr = window.devicePixelRatio || 1;
+            size = Math.round(canvas.clientWidth || 460);
+            canvas.width = size * dpr;
+            canvas.height = size * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function draw() {
+            var R = size / 2;
+            var rIn = R * 0.26;
+            var rOut = R * 0.965;
+
+            ctx.clearRect(0, 0, size, size);
+
+            ctx.beginPath();
+            ctx.arc(R, R, R - 1, 0, TAU);
+            ctx.fillStyle = '#1d1c1a';
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#cfa670';
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(R, R);
+            ctx.rotate(rotation);
+
+            for (var i = 0; i < N; i++) {
+                var a0 = i * SEG, a1 = a0 + SEG;
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, rOut, a0, a1);
+                ctx.closePath();
+                ctx.fillStyle = palette[i % palette.length];
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
+                ctx.stroke();
+
+                var lay = layoutText(data[i], rIn, rOut, SEG);
+                ctx.save();
+                ctx.rotate(a0 + SEG / 2);
+                ctx.font = '600 ' + lay.fs + 'px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#f7f2e8';
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 3;
+                for (var l = 0; l < lay.lines.length; l++) {
+                    var v = (l - (lay.lines.length - 1) / 2) * lay.lineH;
+                    ctx.fillText(lay.lines[l], rOut - 8, v);
+                }
+                ctx.restore();
+            }
+
+            ctx.restore();
+
+            ctx.beginPath();
+            ctx.arc(R, R, R * 0.245, 0, TAU);
+            ctx.fillStyle = '#191817';
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'rgba(207, 166, 112, 0.55)';
+            ctx.stroke();
+        }
+
+        function spin() {
+            if (spinning) return;
+            spinning = true;
+            btn.disabled = true;
+            btn.textContent = '···';
+
+            var delta = TAU * 5 + Math.random() * TAU;   /* 5 圈 + 随机角度 */
+            var start = rotation;
+            var dur = 4200 + Math.random() * 600;       /* 约 4.2 - 4.8 秒 */
+            var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+
+            function frame(now) {
+                var t = (now === undefined ? Date.now() : now);
+                var p = Math.min(1, (t - t0) / dur);
+                var e = 1 - Math.pow(1 - p, 4);          /* easeOutQuart：快 -> 慢 */
+                rotation = start + delta * e;
+                draw();
+                if (p < 1) {
+                    window.requestAnimationFrame(frame);
+                } else {
+                    spinning = false;
+                    btn.textContent = 'GO';
+                    showResult(data[indexAtRotation(rotation, N)]);
+                }
+            }
+
+            window.requestAnimationFrame(frame);
+        }
+
+        function showResult(text) {
+            ruleEl.textContent = '本局规则：【' + text + '】';
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+            confirmBtn.focus();
+        }
+
+        function closeResult() {
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+            btn.disabled = false;      /* 重置 GO */
+            btn.textContent = 'GO';
+            btn.focus();
+        }
+
+        btn.addEventListener('click', spin);
+        confirmBtn.addEventListener('click', closeResult);
+        var mask = modal.querySelector('.wm-mask');
+        if (mask) mask.addEventListener('click', closeResult);
+
+        var resizeTimer = null;
+        window.addEventListener('resize', function () {
+            if (resizeTimer) clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () { resize(); draw(); }, 150);
+        });
+
+        resize();
+        draw();
+
+        return { draw: draw, spin: spin, close: closeResult, data: data, count: N };
+    }
+
+    /* ---------- 按 .wheel-unit 自动初始化 ---------- */
+    function initUnit(unit) {
+        var kind = unit.getAttribute('data-wheel') || 'pvp';
+        var data = kind === 'pve' ? PVE_DATA : PVP_DATA;
+        return create({
+            canvas: unit.querySelector('.wheel-canvas'),
+            btn: unit.querySelector('.wheel-go'),
+            modal: unit.querySelector('.wheel-modal'),
+            rule: unit.querySelector('.wm-rule'),
+            confirm: unit.querySelector('.wm-btn'),
+            data: data,
+            palette: PALETTES[kind] || PALETTES.pvp
+        });
+    }
+
+    function initAll() {
+        var units = document.querySelectorAll('.wheel-unit[data-wheel]');
+        for (var i = 0; i < units.length; i++) initUnit(units[i]);
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        var open = document.querySelectorAll('.wheel-modal.show');
+        for (var i = 0; i < open.length; i++) {
+            var btn = open[i].querySelector('.wm-btn');
+            if (btn) btn.click();
+        }
+    });
+
+    window.QNWheel = {
+        create: create,
+        initUnit: initUnit,
+        PVP_DATA: PVP_DATA,
+        PVE_DATA: PVE_DATA,
+        PALETTES: PALETTES,
+        indexAtRotation: indexAtRotation,
+        layoutText: layoutText
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAll);
+    } else {
+        initAll();
+    }
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+/* ============================================================
+   示例百业 · 百业活动模块
+   卡片式列表：桌面双列 / 移动单列
+   卡片 = 上 2/3 游戏图（待插入）+ 下 1/3 简介
+   ============================================================ */
+
+.activities {
+    position: relative;
+    overflow: hidden;
+}
+
+.activities::before {
+    content: "";
+    position: absolute;
+    width: 480px;
+    height: 480px;
+    top: -140px;
+    right: -160px;
+    border-radius: 50%;
+    filter: blur(90px);
+    background: radial-gradient(circle, rgba(207, 166, 112, 0.13), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.activities .container {
+    position: relative;
+    z-index: 1;
+}
+
+/* ---------- 引导文案 ---------- */
+.act-lead {
+    max-width: 720px;
+    margin: 0 auto 28px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 2;
+    letter-spacing: 0.5px;
+}
+
+/* ---------- 列表：桌面双列 ---------- */
+.act-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    transition: opacity 0.16s ease;
+}
+
+.act-list.is-fading {
+    opacity: 0;
+}
+
+.act-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-mute);
+    padding: 30px 0;
+}
+
+/* ---------- 活动卡片 ---------- */
+.act-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: linear-gradient(160deg, rgba(42, 42, 42, 0.72), rgba(24, 24, 24, 0.86));
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    animation: actCardIn 0.42s ease both;
+}
+
+@keyframes actCardIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.act-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(207, 166, 112, 0.5);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5), 0 0 30px rgba(207, 166, 112, 0.22);
+}
+
+/* 上 2/3：游戏截图（后续插入） */
+.act-shot {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #15181c;
+}
+
+.act-shot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.act-card:hover .act-shot img {
+    transform: scale(1.04);
+}
+
+.act-shot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(12, 12, 12, 0.7) 0%, rgba(12, 12, 12, 0.08) 45%, transparent 72%);
+}
+
+/* 背景装饰编号 */
+.act-no {
+    position: absolute;
+    left: 14px;
+    top: -10px;
+    z-index: 2;
+    font-family: var(--font-serif);
+    font-size: 96px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--gold-light);
+    opacity: 0.16;
+    letter-spacing: 2px;
+    pointer-events: none;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+
+.act-shot img.is-placeholder {
+    filter: saturate(0.75);
+}
+
+/* 下 1/3：简介 */
+.act-body {
+    padding: 18px 22px 22px;
+}
+
+.act-host {
+    display: inline-block;
+    padding: 2px 11px;
+    border: 1px solid rgba(207, 166, 112, 0.45);
+    border-radius: 20px;
+    background: rgba(207, 166, 112, 0.1);
+    color: var(--gold-light);
+    font-size: 11.5px;
+    letter-spacing: 1.5px;
+}
+
+.act-title {
+    margin-top: 10px;
+    font-family: var(--font-serif);
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text);
+}
+
+.act-desc {
+    margin-top: 8px;
+    font-size: 13.5px;
+    line-height: 1.95;
+    color: var(--text-dim);
+}
+
+/* ---------- 分页控件 ---------- */
+.act-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 30px;
+}
+
+.ap-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: rgba(42, 42, 42, 0.6);
+    color: var(--gold);
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.ap-btn:hover {
+    border-color: var(--border-strong);
+    background: rgba(207, 166, 112, 0.12);
+    color: var(--gold-light);
+    box-shadow: 0 0 14px rgba(207, 166, 112, 0.24);
+}
+
+.ap-btn:disabled {
+    opacity: 0.32;
+    cursor: not-allowed;
+    box-shadow: none;
+    background: rgba(42, 42, 42, 0.6);
+    border-color: var(--border);
+}
+
+.ap-dots {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.ap-dot {
+    width: 34px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-mute);
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 1px;
+    transition: color 0.25s ease;
+}
+
+.ap-dot::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: var(--text-mute);
+    transition: all 0.25s ease;
+}
+
+.ap-dot:hover { color: var(--gold-light); }
+
+.ap-dot.active { color: var(--gold-light); }
+
+.ap-dot.active::before {
+    width: 20px;
+    border-radius: 4px;
+    background: var(--gold);
+    box-shadow: 0 0 10px rgba(207, 166, 112, 0.6);
+}
+
+.ap-num {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    min-width: 74px;
+    text-align: center;
+}
+
+.ap-num .cur {
+    color: var(--gold-light);
+    font-size: 17px;
+}
+
+/* ---------- 响应式：移动端单列 ---------- */
+@media (max-width: 768px) {
+    .act-list {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
+    }
+
+    .act-no { font-size: 72px; top: -6px; left: 10px; }
+    .act-body { padding: 15px 16px 18px; }
+    .act-title { font-size: 18px; }
+    .act-desc { font-size: 13px; line-height: 1.85; }
+
+    .act-pager { gap: 10px; flex-wrap: wrap; }
+    .ap-btn { padding: 6px 12px; font-size: 12px; }
+    .ap-dot { width: 26px; }
+    .ap-num { min-width: 60px; font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .act-card,
+    .act-list {
+        animation: none !important;
+        transition: none !important;
+    }
+}

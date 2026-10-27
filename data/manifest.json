@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "current": "3.1",
+  "versions": [
+    {
+      "id": "3.0",
+      "label": "数据版本 3.0",
+      "date": "2026-10-26"
+    },
+    {
+      "id": "3.1",
+      "label": "数据版本 3.1",
+      "date": "2026-10-26"
+    },
+    {
+      "id": "3.2",
+      "label": "数据版本 3.2",
+      "date": "2026-10-26"
+    },
+    {
+      "id": "3.5",
+      "label": "数据版本 3.5",
+      "date": "2026-10-26"
+    },
+    {
+      "id": "3.6",
+      "label": "数据版本 3.6",
+      "date": "2026-10-26"
+    }
+  ],
+  "builds": [
+    {
+      "version": "3.2",
+      "id": "鸣金虹",
+      "name": "鸣金虹",
+      "attrType": "鸣金",
+      "stage": "115阶",
+      "file": "data/3.2/鸣金虹.json"
+    },
+    {
+      "version": "3.5",
+      "id": "牵丝玉",
+      "name": "牵丝玉",
+      "attrType": "牵丝",
+      "stage": "115阶",
+      "file": "data/3.5/牵丝玉.json"
+    },
+    {
+      "version": "3.1",
+      "id": "牵丝翊",
+      "name": "牵丝翊",
+      "attrType": "牵丝",
+      "stage": "115阶",
+      "file": "data/3.1/牵丝翊.json"
+    },
+    {
+      "version": "3.1",
+      "id": "牵丝霖",
+      "name": "牵丝霖",
+      "attrType": "牵丝",
+      "stage": "115阶",
+      "file": "data/3.1/牵丝霖.json"
+    },
+    {
+      "version": "3.1",
+      "id": "破竹尘",
+      "name": "破竹尘",
+      "attrType": "破竹",
+      "stage": "115阶",
+      "file": "data/3.1/破竹尘.json"
+    },
+    {
+      "version": "3.6",
+      "id": "破竹樽",
+      "name": "破竹樽",
+      "attrType": "破竹",
+      "stage": "115阶",
+      "file": "data/3.6/破竹樽.json"
+    },
+    {
+      "version": "3.2",
+      "id": "破竹风",
+      "name": "破竹风",
+      "attrType": "破竹",
+      "stage": "115阶",
+      "file": "data/3.2/破竹风.json"
+    },
+    {
+      "version": "3.1",
+      "id": "破竹鸢",
+      "name": "破竹鸢",
+      "attrType": "破竹",
+      "stage": "115阶",
+      "file": "data/3.1/破竹鸢.json"
+    },
+    {
+      "version": "3.0",
+      "id": "裂石威",
+      "name": "裂石威",
+      "attrType": "裂石",
+      "stage": "115阶",
+      "file": "data/3.0/裂石威.json"
+    },
+    {
+      "version": "3.1",
+      "id": "裂石钧",
+      "name": "裂石钧",
+      "attrType": "裂石",
+      "stage": "115阶",
+      "file": "data/3.1/裂石钧.json"
+    },
+    {
+      "version": "3.1",
+      "id": "鸣金影",
+      "name": "鸣金影",
+      "attrType": "鸣金",
+      "stage": "115阶",
+      "file": "data/3.1/鸣金影.json"
+    }
+  ]
+}

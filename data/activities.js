@@ -1,0 +1,52 @@
+/* 由 tools/sync-activities.js 从 activities.json 自动生成，请勿手改。
+   用途：file:// 直接打开 index.html 时的离线兜底数据。 */
+window.QN_ACTIVITIES = [
+    {
+        "id": 1,
+        "no": "01",
+        "host": "待填写",
+        "title": "示例活动 · 一",
+        "desc": "【待填写】活动介绍写在这里，一两句就够。",
+        "image": "assets/img/activities/example-1.svg"
+    },
+    {
+        "id": 2,
+        "no": "02",
+        "host": "待填写",
+        "title": "示例活动 · 二",
+        "desc": "【待填写】谁都能发起，写清楚怎么参加。",
+        "image": "assets/img/activities/example-2.svg"
+    },
+    {
+        "id": 3,
+        "no": "03",
+        "host": "待填写",
+        "title": "示例活动 · 三",
+        "desc": "【待填写】写清楚时间地点或集合方式。",
+        "image": "assets/img/activities/example-3.svg"
+    },
+    {
+        "id": 4,
+        "no": "04",
+        "host": "待填写",
+        "title": "示例活动 · 四",
+        "desc": "【待填写】可以写点氛围感的话。",
+        "image": "assets/img/activities/example-4.svg"
+    },
+    {
+        "id": 5,
+        "no": "05",
+        "host": "待填写",
+        "title": "示例活动 · 五",
+        "desc": "【待填写】第五个活动，凑满六条可以看分页效果。",
+        "image": "assets/img/activities/example-5.svg"
+    },
+    {
+        "id": 6,
+        "no": "06",
+        "host": "待填写",
+        "title": "示例活动 · 六",
+        "desc": "【待填写】每页 4 条，超过 4 条才会出现翻页按钮。",
+        "image": "assets/img/activities/example-6.svg"
+    }
+];
